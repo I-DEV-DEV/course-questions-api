@@ -1,0 +1,25 @@
+{
+  "name": "course-app",
+  "version": "1.0.0",
+  "description": "A microservice providing questions.",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Microservice Course Questions Active\"",
+	"start": "node index.js"
+  },
+  "repository": {
+	  "type": "git",
+	  "url": "https://github.com/I-DEV-DEV/course-questions-api.git"
+  },
+  "keywords": [
+    "Questions"
+  ],
+  "author": "DevD",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.7",
+    "express": "^4.21.1",
+    "mysql2": "^3.11.3"
+  }
+}
