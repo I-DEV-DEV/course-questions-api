@@ -14,12 +14,27 @@ app.get('/', (req, res) => {
   res.send('Course Questions API is running!');
 });
 
+// Endpoint to get all questions in the table
+app.get('/getAllQuestions', (req, res) => {
+	
+  connection.query('SELECT questionId, courseId, question, opt1, opt2, opt3, opt4 FROM questions', [], (err, results) => {
+    if (err) {
+      console.error('Error fetching questions:', err);
+      res.status(500).send('Server error');
+    } else if (results.length === 0) {
+      res.status(404).send('No questions available');
+    } else {
+      res.json(results);
+    }
+  });
+});
+
 // Endpoint to get all questions for a course
 app.get('/getQuestionsByCourseId/:id', (req, res) => {
 	
   const courseId = req.params.id;
 
-  connection.query('SELECT * FROM questions WHERE courseId = ?', [courseId], (err, results) => {
+  connection.query('SELECT questionId, courseId, question, opt1, opt2, opt3, opt4 FROM questions WHERE courseId = ?', [courseId], (err, results) => {
     if (err) {
       console.error('Error fetching questions:', err);
       res.status(500).send('Server error');
@@ -55,7 +70,7 @@ async function checkCourse(courseId) {
 }
 
 // Endpoint to insert questions for a course
-app.post('/postQuestions', async (req, res) => {
+app.post('/postQuestion', async (req, res) => {
   
   const { courseId, question, opt1, opt2, opt3, opt4, ans } = req.body;
 	//console.log(req.body);	
@@ -105,7 +120,7 @@ app.put('/updateQuestion/:id',async (req, res) => {
 	const { courseId, question, opt1, opt2, opt3, opt4, ans } = req.body;
 	const query = 'UPDATE questions SET courseId = ?, question = ?, opt1 = ?, opt2 = ?, opt3 = ?, opt4 = ?, ans = ? WHERE questionId = ?';
 	
-	//console.log(questionId);
+	console.log(questionId);
 	const courseExists = await checkCourse(courseId);
 	
 	if(courseExists) {
@@ -125,6 +140,40 @@ app.put('/updateQuestion/:id',async (req, res) => {
 		console.log("No course found.");
 		res.send({ message: "No course found. Invalid course ID." });
 	}
+});
+
+//Endpoint to check answer for the question
+app.post('/checkAnswer', (req, res) => {
+  
+  const { questionId, ans } = req.body;
+  
+  if( !questionId ) {
+	  return res.status(400).send({ error: "Question ID is required." });
+  }
+  
+  const query = "SELECT question, ans FROM questions WHERE questionId = ?";
+  
+  connection.query(query, [questionId], (err, results) => {
+	  if(err) {
+		  console.error("Error querying the database:", err);
+		  return res.status(500).send({ error: "Database query failed." });
+	  }
+	  
+	  //console.log(results);
+	  //res.send(results[0].ans);
+	  
+	  if(results.length > 0) {
+		  if(results[0].ans == ans) {
+			  return res.send({ "message": "The answer is correct :)", "question": results[0].question, "answer": results[0].ans });
+		  } else {
+			  return res.send({ "message": "The answer is wrong :( Try again.", "question": results[0].question, "Your answer": ans });
+		  }
+	  } else {
+		  return res.send({ "message": "Question does not exist." });
+	  }
+	  
+  });
+  
 });
 
 app.listen(PORT, () => {
