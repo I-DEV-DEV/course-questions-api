@@ -1,17 +1,17 @@
 import express from 'express';
 import connection from './db.js';
-import axios from 'axios';
 
 // Ensure `db.js` is loaded when the server starts
 // You can use the connection in route handlers as needed
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000; // For app
+const coursePORT = 3020; // For getCourseById endpoint
 
 app.use(express.json()); // Enable JSON parsing for request bodies
 
 app.get('/', (req, res) => {
-  res.send('Hello, world!');
+  res.send('Course Questions API is running!');
 });
 
 // Endpoint to get all questions for a course
@@ -35,8 +35,8 @@ app.get('/getQuestionsByCourseId/:id', (req, res) => {
 async function checkCourse(courseId) {
 	
 	try {
-		
-		const response = await fetch(`http://localhost:3020/getCourseById/${courseId}`)
+		//console.log(courseId);
+		const response = await fetch(`http://localhost:${coursePORT}/getCourseById/${courseId}`)
 		const data = await response.json();
 		
 		if(data && Object.keys(data).length < 1) {
@@ -58,7 +58,7 @@ async function checkCourse(courseId) {
 app.post('/postQuestions', async (req, res) => {
   
   const { courseId, question, opt1, opt2, opt3, opt4, ans } = req.body;
-  //console.log(req.body);	
+	//console.log(req.body);	
 	const courseExists = await checkCourse(courseId);
 	
 	if(courseExists) {
@@ -82,10 +82,10 @@ app.post('/postQuestions', async (req, res) => {
 
 //Endpoint to delete a question
 app.delete('/deleteQuestion/:id',(req, res) => {
-	const { id } = req.params;
+	const questionId = req.params.id;
 	const query = 'DELETE FROM questions WHERE questionId = ?';
 	
-	connection.query(query, [id], (err,result) => {
+	connection.query(query, [questionId], (err,result) => {
 		if(err) {
 			console.error("Error deleting data:", err);
 			res.status(500).json({ message: "Error deleting data" });
@@ -95,31 +95,38 @@ app.delete('/deleteQuestion/:id',(req, res) => {
 			res.status(404).json({ message: "Question ID invalid" });
 			return;
 		}
-		res.status(200).json({ message: "Question deleted successfully", questionId: id });
+		res.status(200).json({ message: "Question deleted successfully", questionId: questionId });
 	});	
 });
 
 //Endpoint to update a question
-app.put('/updateQuestion/:id',(req, res) => { 
-	const { questionId } = req.params;
+app.put('/updateQuestion/:id',async (req, res) => { 
+	const questionId = req.params.id;
 	const { courseId, question, opt1, opt2, opt3, opt4, ans } = req.body;
 	const query = 'UPDATE questions SET courseId = ?, question = ?, opt1 = ?, opt2 = ?, opt3 = ?, opt4 = ?, ans = ? WHERE questionId = ?';
 	
-	connection.query(query, [courseId, question, opt1, opt2, opt3, opt4, ans, questionId], (err,result) => {
-		if(err) {
-			console.error("Error updating data:", err);
-			res.status(500).json({ message: "Error updating data." });
-			return;
-		}
-		if(result.affectedRows === 0) {
-			res.status(404).json({ message: "Question ID invalid" });
-			return;
-		}
-		res.status(200).json({ message: "Question updated successfully.", questionId: questionId });
-	});	
+	//console.log(questionId);
+	const courseExists = await checkCourse(courseId);
+	
+	if(courseExists) {
+		connection.query(query, [courseId, question, opt1, opt2, opt3, opt4, ans, questionId], (err,result) => {
+			if(err) {
+				console.error("Error updating data:", err);
+				res.status(500).json({ message: "Error updating data." });
+				return;
+			}
+			if(result.affectedRows === 0) {
+				res.status(404).json({ message: "Question ID invalid" });
+				return;
+			}
+			res.status(200).json({ message: "Question updated successfully.", questionId: questionId });
+		});	
+	} else {
+		console.log("No course found.");
+		res.send({ message: "No course found. Invalid course ID." });
+	}
 });
 
-
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server is running on http://localhost:${PORT}`);
 });
