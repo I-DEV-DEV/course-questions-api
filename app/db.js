@@ -4,7 +4,8 @@ const connection = mysql.createConnection({
   host: 'localhost',  				// Update with your DB host if needed
   user: 'myuser',       				// Replace with your MySQL username
   password: 'mypassword',       		// Replace with your MySQL password
-  database: 'course_questions' 		// Replace with your database name
+  database: 'course_questions', 		// Replace with your database name
+  port: 3320
 });
 
 connection.connect((err) => {
